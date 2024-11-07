@@ -6,4 +6,3 @@ httpx
 langchain
 asyncio
 pydantic
-python==3.12.5
