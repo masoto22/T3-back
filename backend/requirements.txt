@@ -4,5 +4,4 @@ fastapi
 uvicorn
 httpx
 langchain
-asyncio
 pydantic
