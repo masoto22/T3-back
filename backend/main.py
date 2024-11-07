@@ -49,6 +49,10 @@ def search_documents(query_embedding, k=5):
     distances, indices = index.search(np.array([query_embedding]), k)
     return [get_real_fragment(i) for i in indices[0]]
 
+@app.get("/")
+async def health_check():
+    return "The health check is successful"
+
 @app.post("/complete")
 async def complete(request: Request):
     data = await request.json()
