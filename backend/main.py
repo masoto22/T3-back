@@ -82,13 +82,16 @@ async def complete(request: Request):
 @app.post("/chat")
 async def chat(request: Request):
     data = await request.json()
+    print("Received data:", data)  # Debug log
+    
     model = data.get("model")
     messages = data.get("messages")
-    
-    if not model or not messages:
-        raise HTTPException(status_code=400, detail="Missing request parameters")
 
-    async def generate_response_stream():
+    if not model or not messages:
+        print("Missing parameters in request")  # Debug log
+        return JSONResponse(status_code=400, content={"detail": "Missing parameters"})
+
+    try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 "http://tormenta.ing.puc.cl/api/chat",
@@ -96,11 +99,12 @@ async def chat(request: Request):
                 headers={'Content-Type': 'application/json'},
                 stream=True
             )
+            print("Response from external API:", response)  # Debug log
             async for line in response.aiter_lines():
-                if line:
-                    yield f"data: {line}\n\n"
-
-    return StreamingResponse(generate_response_stream(), media_type="text/event-stream")
+                yield f"data: {line}\n\n"
+    except Exception as e:
+        print("Error in /chat endpoint:", e)  # Debug log
+        return JSONResponse(status_code=500, content={"detail": "Error in chat processing"})
 
 @app.post("/search")
 async def search(query: str):
