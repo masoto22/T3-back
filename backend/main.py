@@ -10,7 +10,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://t3-front.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],  
     allow_headers=["*"],  
@@ -81,6 +81,7 @@ async def complete(request: Request):
 
 @app.post("/chat")
 async def chat(request: Request):
+    print("Received request on /chat endpoint")  # Debug log
     data = await request.json()
     model = data.get("model")
     messages = data.get("messages")
