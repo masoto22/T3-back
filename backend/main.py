@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import logging
 
+logging.basicConfig(level=logging.INFO)
+
 app = FastAPI()
 
 # https://medium.com/@timnirmal/stream-openai-respond-through-fastapi-to-next-js-f5395f69687c
