@@ -5,6 +5,7 @@ import faiss
 import numpy as np
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import logging
 
 app = FastAPI()
 
@@ -22,17 +23,18 @@ index = None
 
 def load_faiss_index():
     global index
-    print("Intentando cargar el índice FAISS...")
+    logging.info("Intentando cargar el índice FAISS...")
     if os.path.exists("faiss_index.index"):
         index = faiss.read_index("faiss_index.index")
-        print("Índice FAISS cargado correctamente.")
+        logging.info("Índice FAISS cargado correctamente.")
     else:
-        print("El archivo 'faiss_index.index' no existe.")
+        logging.warning("El archivo 'faiss_index.index' no existe.")
+
 
 
 def load_fragments():
     if not os.path.exists("scripts"):
-        print("La carpeta 'scripts' no existe.")
+        logging.info("La carpeta 'scripts' no existe.")
         return
     for file in os.listdir("scripts"):
         if file.endswith(".txt"):
@@ -76,7 +78,7 @@ async def health_check():
 
 @app.post("/chat")
 async def chat(request: Request):
-    print("Received request on /chat endpoint")  
+    logging.info("Received request on /chat endpoint")  
     data = await request.json()
     model = data.get("model")
     messages = data.get("messages")
