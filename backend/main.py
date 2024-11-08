@@ -30,6 +30,9 @@ def load_faiss_index():
 
 
 def load_fragments():
+    if not os.path.exists("scripts"):
+        print("La carpeta 'scripts' no existe.")
+        return
     for file in os.listdir("scripts"):
         if file.endswith(".txt"):
             with open(os.path.join("scripts", file), "r", encoding="utf-8") as f:
@@ -41,22 +44,28 @@ load_faiss_index()
 
 async def generate_query_embedding(query: str):
     async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.post(
-            "http://tormenta.ing.puc.cl/api/embed",
-            json={"model": "nomic-embed-text", "input": query},
-            headers={'Content-Type': 'application/json'}
-        )
-    if response.status_code == 200:
-        data = response.json()
-        return np.array(data['embeddings'][0], dtype='float32')
-    else:
-        raise HTTPException(status_code=500, detail="Error generating embedding")
+        try:
+            response = await client.post(
+                "http://tormenta.ing.puc.cl/api/embed",
+                json={"model": "nomic-embed-text", "input": query},
+                headers={'Content-Type': 'application/json'}
+            )
+            response.raise_for_status()
+        except httpx.RequestError as exc:
+            raise HTTPException(status_code=503, detail=f"Error de conexión: {exc}")
+        except httpx.HTTPStatusError as exc:
+            raise HTTPException(status_code=500, detail=f"Error en la respuesta: {exc}")
+
+    data = response.json()
+    return np.array(data['embeddings'][0], dtype='float32')
 
 def get_real_fragment(index):
     file_name = f"{index}.txt"
     return fragments.get(file_name, "Fragmento no encontrado")
 
 def search_documents(query_embedding, k=5):
+    if index is None:
+        raise HTTPException(status_code=500, detail="El índice FAISS no está cargado.")
     distances, indices = index.search(np.array([query_embedding]), k)
     return [get_real_fragment(i) for i in indices[0]]
 
@@ -82,12 +91,19 @@ async def chat(request: Request):
 
     async def generate_response_stream():
         async with httpx.AsyncClient() as client:
-            async with client.stream(
-                "POST", 
-                "http://tormenta.ing.puc.cl/api/chat", 
-                json={"model": model, "messages": messages_with_context}) as response:
-                async for line in response.aiter_lines():
-                    if line:
-                        yield f"data: {line}\n\n"
+            try:
+                async with client.stream(
+                    "POST", 
+                    "http://tormenta.ing.puc.cl/api/chat", 
+                    json={"model": model, "messages": messages_with_context}
+                ) as response:
+                    response.raise_for_status()
+                    async for line in response.aiter_lines():
+                        if line:
+                            yield f"data: {line}\\n\\n"
+            except httpx.RequestError as exc:
+                yield f"data: Error de conexión: {exc}\\n\\n"
+            except httpx.HTTPStatusError as exc:
+                yield f"data: Error en la respuesta: {exc}\\n\\n"
 
     return StreamingResponse(generate_response_stream(), media_type="text/event-stream")
