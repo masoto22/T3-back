@@ -22,6 +22,7 @@ index = None
 
 def load_faiss_index():
     global index
+    print("Intentando cargar el índice FAISS...")
     if os.path.exists("faiss_index.index"):
         index = faiss.read_index("faiss_index.index")
         print("Índice FAISS cargado correctamente.")
