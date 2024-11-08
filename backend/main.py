@@ -11,7 +11,7 @@ app = FastAPI()
 # https://medium.com/@timnirmal/stream-openai-respond-through-fastapi-to-next-js-f5395f69687c
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],  
     allow_headers=["*"],  
