@@ -5,7 +5,7 @@ import faiss
 import numpy as np
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from process_scripts import process_scripts
+from celery_worker import run_process_scripts
 
 app = FastAPI()
 
@@ -21,7 +21,11 @@ app.add_middleware(
 fragments = {}
 index = None 
 
-process_scripts()
+async def lifespan(app: FastAPI):
+    run_process_scripts.delay()
+    yield
+
+
 
 def load_fragments():
     for file in os.listdir("scripts"):
