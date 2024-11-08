@@ -5,6 +5,7 @@ import faiss
 import numpy as np
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from process_scripts import process_scripts
 
 app = FastAPI()
 
@@ -18,7 +19,9 @@ app.add_middleware(
 )
 
 fragments = {}
-index = None  # Inicializa el índice
+index = None 
+
+process_scripts()
 
 def load_fragments():
     for file in os.listdir("scripts"):
@@ -29,7 +32,7 @@ def load_fragments():
 
 def load_faiss_index():
     global index
-    index = faiss.read_index("faiss_index.index")  # Carga el índice de FAISS
+    index = faiss.read_index("faiss_index.index") 
 
 load_fragments()
 load_faiss_index()
@@ -69,17 +72,10 @@ async def chat(request: Request):
     if not model or not messages:
         raise HTTPException(status_code=400, detail="Missing request parameters")
 
-    # Obtener el último mensaje del usuario
     user_message = messages[-1]['content']
-    
-    # Generar embedding para el mensaje del usuario
     query_embedding = await generate_query_embedding(user_message)
-    
-    # Buscar documentos relevantes
     relevant_fragments = search_documents(query_embedding)
     context = " ".join(relevant_fragments)
-
-    # Agregar el contexto a los mensajes
     messages_with_context = [{"role": "system", "content": context}] + messages
 
     async def generate_response_stream():
