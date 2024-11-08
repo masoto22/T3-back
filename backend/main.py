@@ -5,7 +5,6 @@ import faiss
 import numpy as np
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from celery_worker import run_process_scripts
 
 app = FastAPI()
 
@@ -21,10 +20,13 @@ app.add_middleware(
 fragments = {}
 index = None 
 
-async def lifespan(app: FastAPI):
-    run_process_scripts.delay()
-    yield
-
+def load_faiss_index():
+    global index
+    if os.path.exists("faiss_index.index"):
+        index = faiss.read_index("faiss_index.index")
+        print("Índice FAISS cargado correctamente.")
+    else:
+        print("El archivo 'faiss_index.index' no existe.")
 
 
 def load_fragments():
@@ -33,10 +35,6 @@ def load_fragments():
             with open(os.path.join("scripts", file), "r", encoding="utf-8") as f:
                 content = f.read()
                 fragments[file] = content
-
-def load_faiss_index():
-    global index
-    index = faiss.read_index("faiss_index.index") 
 
 load_fragments()
 load_faiss_index()

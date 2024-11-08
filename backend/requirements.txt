@@ -6,4 +6,3 @@ httpx
 langchain
 pydantic
 faiss-cpu
-celery
